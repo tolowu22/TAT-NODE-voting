@@ -28,7 +28,9 @@ login_manager.init_app(app)
 login_manager.login_view = 'login' 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.getenv('TMPDIR') or BASE_DIR
+DATA_DIR = os.getenv('TMPDIR') or os.getenv('TEMP') or os.getenv('TMP') or '/tmp'
+if not os.path.isabs(DATA_DIR):
+    DATA_DIR = os.path.join(BASE_DIR, DATA_DIR)
 os.makedirs(DATA_DIR, exist_ok=True)
 
 DB_NAME = os.path.join(DATA_DIR, 'users.db')
@@ -216,16 +218,13 @@ def logout():
 @login_required
 def index():
     vote_counts = blockchain.tally_votes(CANDIDATES)
-    redact = current_user.username != 'admin'
-    activities = get_recent_activities(redact=redact)
     return render_template('index.html', 
                            chain=blockchain.chain, 
                            pending=blockchain.pending_votes,
                            candidates=CANDIDATES,
                            vote_counts=vote_counts,
                            chain_valid=blockchain.is_chain_valid(blockchain.chain),
-                           user=current_user,
-                           activities=activities)
+                           user=current_user)
 
 @app.route('/vote', methods=['POST'])
 @login_required
@@ -317,13 +316,15 @@ def admin():
     total_blocks = len(blockchain.chain)
     pending_votes = len(blockchain.pending_votes)
     vote_history = build_vote_history()
+    activities = get_recent_activities(redact=False)
     return render_template('admin.html', 
                            vote_counts=vote_counts, 
                            total_votes=total_votes,
                            total_blocks=total_blocks,
                            pending_votes=pending_votes,
                            chain_valid=blockchain.is_chain_valid(blockchain.chain),
-                           vote_history=vote_history)
+                           vote_history=vote_history,
+                           activities=activities)
 
 @app.route('/audit')
 @login_required

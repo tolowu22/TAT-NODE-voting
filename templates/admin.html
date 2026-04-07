@@ -188,6 +188,37 @@
             </div>
         </div>
 
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="glass-card p-4">
+                    <h4 class="fw-bold mb-4">
+                        <i class="fa-solid fa-history me-2 text-warning"></i>System Activity Log
+                    </h4>
+                    <div class="list-group list-group-flush">
+                        {% for activity in activities %}
+                        <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center border-bottom">
+                            <div>
+                                <i class="fa-solid fa-clock text-muted me-2"></i>
+                                <span class="fw-bold">{{ activity.action }}</span>
+                                <span class="text-muted">by {{ activity.user }}</span>
+                                {% if activity.details %}
+                                <br><small class="text-muted">{{ activity.details }}</small>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ activity.timestamp_formatted }}</small>
+                        </div>
+                        {% endfor %}
+                        {% if not activities %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-inbox fa-2x mb-2 text-secondary opacity-50"></i>
+                            <p>No activity recorded</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row mt-4">
             <div class="col-12">
                 <div class="glass-card p-4">
