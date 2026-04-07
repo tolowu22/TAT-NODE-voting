@@ -19,6 +19,10 @@ app = Flask(__name__)
 # Load Secret Key from .env (Safety fallback provided for dev)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev_fallback_key_do_not_use_in_prod')
 
+# Ensure secret key is set for production
+if app.secret_key == 'dev_fallback_key_do_not_use_in_prod':
+    print("WARNING: Using development secret key. Set FLASK_SECRET_KEY environment variable for production.")
+
 # Auto-Logout after 5 minutes of inactivity
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 
@@ -27,22 +31,30 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login' 
 
-DB_NAME = "users.db"
+# Use /tmp for database on Vercel (ephemeral), or local db for development
+DB_NAME = os.path.join(os.getenv('TMPDIR', '/tmp'), 'users.db') if os.getenv('VERCEL') else "users.db"
 
 def init_db():
     """Creates the User table if it doesn't exist"""
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
-            )
-        ''')
-        conn.commit()
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL
+                )
+            ''')
+            conn.commit()
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        # Continue anyway, database might already exist
 
-init_db() # Run once on startup
+try:
+    init_db()  # Run once on startup
+except Exception as e:
+    print(f"Failed to initialize database: {e}")
 
 # --- 2. USER AUTHENTICATION MODELS ---
 class User(UserMixin):
@@ -176,6 +188,15 @@ def validate():
     else:
         flash("SECURITY ALERT: Blockchain has been tampered with!", "danger")
     return redirect(url_for('index'))
+
+# --- ERROR HANDLERS ---
+@app.errorhandler(404)
+def not_found(error):
+    return "Page not found", 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return "Internal server error", 500
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)

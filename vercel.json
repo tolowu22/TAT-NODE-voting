@@ -1,18 +1,8 @@
 {
   "buildCommand": "pip install -r requirements.txt",
-  "devCommand": "python app.py",
+  "public": false,
   "env": {
+    "PYTHONUNBUFFERED": "1",
     "FLASK_ENV": "production"
-  },
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python-3.9"
-    }
-  },
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.py"
-    }
-  ]
+  }
 }

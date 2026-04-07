@@ -1,7 +1,9 @@
+import sys
+import os
+
+# Add parent directory to path so we can import app
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app import app
 
-# Vercel Python runtime uses the WSGI app object named "app".
-# This file routes all requests from vercel.json to the Flask app.
-
-if __name__ == '__main__':
-    app.run(debug=False, port=5000)
+# Vercel calls this 'app' as the WSGI application
