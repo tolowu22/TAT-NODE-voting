@@ -27,9 +27,12 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login' 
 
-DB_NAME = "users.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CHAIN_FILE = os.path.join(BASE_DIR, 'blockchain.json')
+DATA_DIR = os.getenv('TMPDIR') or BASE_DIR
+os.makedirs(DATA_DIR, exist_ok=True)
+
+DB_NAME = os.path.join(DATA_DIR, 'users.db')
+CHAIN_FILE = os.path.join(DATA_DIR, 'blockchain.json')
 
 def init_db():
     """Creates the User table if it doesn't exist"""
@@ -55,7 +58,7 @@ with sqlite3.connect(DB_NAME) as conn:
         cursor.execute("INSERT INTO users (username, password) VALUES ('admin', ?)", (hashed_pw,))
         conn.commit()
 
-ACTIVITY_LOG_FILE = os.path.join(BASE_DIR, 'activity_log.json')
+ACTIVITY_LOG_FILE = os.path.join(DATA_DIR, 'activity_log.json')
 
 def log_activity(action, user, details=""):
     """Log user activities for audit trail"""
@@ -265,6 +268,7 @@ def about():
     return render_template('about.html')
 
 @app.route('/validate', methods=['GET'])
+@login_required
 def validate():
     if blockchain.is_chain_valid(blockchain.chain):
         log_activity("Chain validation passed", current_user.username)
