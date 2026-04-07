@@ -36,6 +36,9 @@ class Blockchain:
         :param candidate: <str> The candidate being voted for
         :return: <int> The index of the Block that will hold this vote
         """
+        # SECURITY CHECK: Prevent Double Voting
+        if self.has_voted(voter_id):
+            return False
         self.pending_votes.append({
             'voter_id': voter_id,
             'candidate': candidate,
@@ -81,6 +84,42 @@ class Blockchain:
         guess = f'{last_proof}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
+
+    def has_voted(self, voter_id):
+        # 1. Check Pending Mempool
+        for vote in self.pending_votes:
+            if vote['voter_id'] == voter_id: return True
+        # 2. Check Mined Blocks
+        for block in self.chain:
+            if 'votes' in block:
+                for vote in block['votes']:
+                    if isinstance(vote, dict) and vote.get('voter_id') == voter_id:
+                        return True
+        return False
+
+    def tally_votes(self, official_candidates):
+        results = {candidate: 0 for candidate in official_candidates}
+        for block in self.chain:
+            if 'votes' in block:
+                for vote in block['votes']:
+                    candidate = vote['candidate']
+                    if candidate in results: results[candidate] += 1
+        # Include pending votes in live tally
+        for vote in self.pending_votes:
+            candidate = vote['candidate']
+            if candidate in results: results[candidate] += 1
+        return results
+
+    def is_chain_valid(self, chain):
+        last_block = chain[0]
+        current_index = 1
+        while current_index < len(chain):
+            block = chain[current_index]
+            if block['previous_hash'] != self.hash(last_block): return False
+            if not self.valid_proof(last_block['proof'], block['proof']): return False
+            last_block = block
+            current_index += 1
+        return True
 
 
 # --- DRIVER CODE (To test it works) ---

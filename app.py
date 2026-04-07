@@ -8,6 +8,7 @@ import json
 import sqlite3
 import os
 from time import time
+from blockchain_voting_system import Blockchain
 
 # --- 1. CONFIGURATION & SECURITY ---
 # Load environment variables from .env file
@@ -59,86 +60,6 @@ def load_user(user_id):
         if user_data:
             return User(id=user_data[0], username=user_data[1], password=user_data[2])
     return None
-
-# --- 3. THE BLOCKCHAIN CLASS ---
-class Blockchain:
-    def __init__(self):
-        self.chain = []
-        self.pending_votes = []
-        self.new_block(previous_hash='1', proof=100)
-
-    def new_block(self, proof, previous_hash=None):
-        block = {
-            'index': len(self.chain) + 1,
-            'timestamp': time(),
-            'votes': self.pending_votes,
-            'proof': proof,
-            'previous_hash': previous_hash or self.hash(self.chain[-1]),
-        }
-        self.pending_votes = []
-        self.chain.append(block)
-        return block
-
-    def new_vote(self, voter_id, candidate):
-        # SECURITY CHECK: Prevent Double Voting
-        if self.has_voted(voter_id):
-            return False
-        self.pending_votes.append({'voter_id': voter_id, 'candidate': candidate})
-        return True
-
-    def has_voted(self, voter_id):
-        # 1. Check Pending Mempool
-        for vote in self.pending_votes:
-            if vote['voter_id'] == voter_id: return True
-        # 2. Check Mined Blocks
-        for block in self.chain:
-            if 'votes' in block:
-                for vote in block['votes']:
-                    if isinstance(vote, dict) and vote.get('voter_id') == voter_id:
-                        return True
-        return False
-
-    def tally_votes(self, official_candidates):
-        results = {candidate: 0 for candidate in official_candidates}
-        for block in self.chain:
-            if 'votes' in block:
-                for vote in block['votes']:
-                    candidate = vote['candidate']
-                    if candidate in results: results[candidate] += 1
-        # Include pending votes in live tally
-        for vote in self.pending_votes:
-            candidate = vote['candidate']
-            if candidate in results: results[candidate] += 1
-        return results
-
-    @property
-    def last_block(self): return self.chain[-1]
-
-    @staticmethod
-    def hash(block):
-        block_string = json.dumps(block, sort_keys=True).encode()
-        return hashlib.sha256(block_string).hexdigest()
-
-    def proof_of_work(self, last_proof):
-        proof = 0
-        while self.valid_proof(last_proof, proof) is False: proof += 1
-        return proof
-
-    @staticmethod
-    def valid_proof(last_proof, proof):
-        guess = f'{last_proof}{proof}'.encode()
-        return hashlib.sha256(guess).hexdigest()[:4] == "0000"
-
-    def is_chain_valid(self, chain):
-        last_block = chain[0]
-        current_index = 1
-        while current_index < len(chain):
-            block = chain[current_index]
-            if block['previous_hash'] != self.hash(last_block): return False
-            if not self.valid_proof(last_block['proof'], block['proof']): return False
-            last_block = block
-            current_index += 1
-        return True
 
 def load_candidates(filename='names.txt'):
     base = os.path.dirname(__file__)
@@ -257,4 +178,4 @@ def validate():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
