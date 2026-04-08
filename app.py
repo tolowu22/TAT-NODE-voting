@@ -129,8 +129,9 @@ def send_verification_email(recipient_email, verify_link):
     message.attach(part2)
 
     try:
+        mail_server = os.getenv('MAIL_SERVER', 'smtp-relay.brevo.com')
         # Using Port 587 (TLS) instead of 465 (SSL)
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP(mail_server, 587)
         server.ehlo()
         server.starttls() # This line secures the connection
         server.login(sender_email, sender_password)
