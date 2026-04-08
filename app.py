@@ -248,7 +248,12 @@ def load_candidates(filename='names.txt'):
         return ["Candidate A", "Candidate B"]
 
 def validate_voter_id(voter_id):
-    """Validate voter ID format silently"""
+    """Validate voter ID format silently, with an exception for the admin."""
+    # 1. Allow the admin to bypass the numeric check
+    if voter_id == 'admin':
+        return True, ""
+        
+    # 2. Check if normal voters are using a number between 1 and 50000
     try:
         id_int = int(voter_id)
         if id_int < 1 or id_int > 50000:
