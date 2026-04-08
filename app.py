@@ -97,6 +97,8 @@ def send_verification_email(recipient_email, verify_link):
         print("ERROR: Mail credentials not found in .env")
         return False
 
+    print(f"MY EMAIL IS: {sender_email}")
+    print(f"MY PASSWORD IS: {sender_password}")
     message = MIMEMultipart("alternative")
     message["Subject"] = "Verify your TAT Node Identity"
     message["From"] = sender_email
