@@ -89,7 +89,7 @@ def ensure_db():
 ensure_db()
 
 def send_verification_email(recipient_email, verify_link):
-    """Sends a real verification email using SMTP."""
+    """Sends a real verification email using Gmail SMTP (TLS)."""
     sender_email = os.getenv('MAIL_USERNAME')
     sender_password = os.getenv('MAIL_PASSWORD')
     
@@ -97,8 +97,6 @@ def send_verification_email(recipient_email, verify_link):
         print("ERROR: Mail credentials not found in .env")
         return False
 
-    print(f"MY EMAIL IS: {sender_email}")
-    print(f"MY PASSWORD IS: {sender_password}")
     message = MIMEMultipart("alternative")
     message["Subject"] = "Verify your TAT Node Identity"
     message["From"] = sender_email
@@ -129,23 +127,22 @@ def send_verification_email(recipient_email, verify_link):
     message.attach(part2)
 
     try:
-        mail_server = os.getenv('MAIL_SERVER', 'smtp-relay.brevo.com')
-        # Using Port 587 (TLS) instead of 465 (SSL)
-        server = smtplib.SMTP(mail_server, 587)
+        # Connect to Gmail using Port 587 (TLS)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
         server.ehlo()
-        server.starttls() # This line secures the connection
+        server.starttls() # This secures the connection
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipient_email, message.as_string())
         server.quit()
         return True
     except Exception as e:
-        # This will print the EXACT reason it failed in your terminal
-        print(f"\n" + "!"*50)
-        print(f"EMAIL FAILED TO SEND. ERROR DETAILS:")
-        print(f"{e}")
+        # Prints exact error details if Google rejects it
+        print("\n" + "!"*50)
+        print("EMAIL FAILED TO SEND. ERROR DETAILS:")
+        print(e)
         print("!"*50 + "\n")
         return False
-
+    
 ACTIVITY_LOG_FILE = os.path.join(DATA_DIR, 'activity_log.json')
 
 def log_activity(action, user, details=""):

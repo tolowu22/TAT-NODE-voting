@@ -1,10 +1,10 @@
 import smtplib
 
 # 1. Put your actual sender email address inside the quotes
-sender_email = "tatelectoralnode@gmail.com"
+sender_email = "toluwaniolowu@gmail.com"
 
 # 2. Put your 16-letter Google App Password inside the quotes (NO SPACES!)
-sender_password = "kddfkvevmscrvfsw"
+sender_password = "fmuydqezbwplbeaw"
 
 try:
     print(f"1. Attempting to connect to Google with {sender_email}...")
