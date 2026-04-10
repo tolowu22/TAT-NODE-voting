@@ -1,5 +1,6 @@
 import uuid
 import smtplib
+import shutil
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import ssl
@@ -404,17 +405,28 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/')
-@login_required
+@login_required # Keep this if you have it
 def index():
-    # 1. Get the absolute path to where app.py lives on Vercel
+    # 1. Find the original DB and define the Vercel /tmp path
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    db_path = os.path.join(BASE_DIR, 'users.db')
-    
-    # 2. Connect using the absolute path
-    conn = sqlite3.connect(db_path)
+    original_db = os.path.join(BASE_DIR, 'users.db')
+    tmp_db = '/tmp/users.db'
+
+    # 2. If the DB isn't in /tmp yet, copy it there. 
+    # If it doesn't exist at all, SQLite will make a fresh one.
+    if not os.path.exists(tmp_db) and os.path.exists(original_db):
+        shutil.copy2(original_db, tmp_db)
+
+    # 3. Connect to the Writable /tmp database!
+    conn = sqlite3.connect(tmp_db)
     cursor = conn.cursor()
     
     try:
+        # Just in case Vercel created a totally blank DB, ensure the table exists
+        cursor.execute('''CREATE TABLE IF NOT EXISTS candidates (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL,
+                            party TEXT NOT NULL)''')
         cursor.execute("SELECT * FROM candidates")
         candidates = cursor.fetchall()
     except sqlite3.OperationalError:
