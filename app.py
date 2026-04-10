@@ -435,10 +435,21 @@ def index():
     conn.close()
 
     # 4. GET THE VOTE COUNTS
-    # We will pass an empty dictionary for now just to stop the crash and load the page.
-    # (Later, you can change this to: vote_counts = blockchain.get_vote_counts() or similar)
+    # --- GET THE VOTE COUNTS FROM THE BLOCKCHAIN ---
     vote_counts = {}
+    
+    # Loop through every block in your blockchain
+    for block in blockchain.chain:
+        # Check every transaction (vote) inside the block
+        # Note: If your code uses the word 'transactions' instead of 'votes', change it below!
+        for vote in block.get('votes', []): 
+            candidate = vote.get('candidate')
+            if candidate:
+                # Add 1 to this candidate's total
+                vote_counts[candidate] = vote_counts.get(candidate, 0) + 1
 
+    # Now pass the real vote_counts to the template
+    return render_template('index.html', candidates=candidates, user=current_user, vote_counts=vote_counts)
     # 5. PASS VOTE_COUNTS TO THE TEMPLATE!
     return render_template('index.html', candidates=candidates, user=current_user, vote_counts=vote_counts)
 
@@ -607,50 +618,84 @@ def audit():
     return render_template('audit.html', tampered_blocks=tampered_blocks, chain=blockchain.chain)
 
 @app.route('/admin/dashboard')
+@login_required
 def admin_dashboard():
-    # Only allow admin to access this! You might want to check the session here.
-    if 'voter_id' not in session or session['voter_id'] != 'admin':
-        flash("Unauthorized access. Admin only.", "danger")
-        return redirect(url_for('login'))
+    # Security check
+    if current_user.username != 'admin':
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('index'))
 
-    conn = sqlite3.connect('users.db')
+    # Vercel-Safe /tmp Database Logic
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    original_db = os.path.join(BASE_DIR, 'users.db')
+    tmp_db = '/tmp/users.db'
+
+    if not os.path.exists(tmp_db) and os.path.exists(original_db):
+        import shutil
+        shutil.copy2(original_db, tmp_db)
+
+    conn = sqlite3.connect(tmp_db)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM candidates")
-    candidates = cursor.fetchall()
-    conn.close()
     
+    try:
+        # Ensure table exists so Vercel doesn't crash if it just woke up
+        cursor.execute('''CREATE TABLE IF NOT EXISTS candidates (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL,
+                            party TEXT NOT NULL)''')
+        cursor.execute("SELECT * FROM candidates")
+        candidates = cursor.fetchall()
+    except sqlite3.OperationalError:
+        candidates = []
+        
+    conn.close()
+
     return render_template('admin_dashboard.html', candidates=candidates)
 
+
 @app.route('/admin/add_candidate', methods=['POST'])
+@login_required
 def add_candidate():
-    if 'voter_id' not in session or session['voter_id'] != 'admin':
-        return redirect(url_for('login'))
+    if current_user.username != 'admin':
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('index'))
 
     name = request.form.get('name')
     party = request.form.get('party')
 
     if name and party:
-        conn = sqlite3.connect('users.db')
+        # Vercel-Safe Write Access
+        tmp_db = '/tmp/users.db'
+        
+        # We assume the dashboard already copied the DB to /tmp, so we just connect
+        conn = sqlite3.connect(tmp_db)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO candidates (name, party) VALUES (?, ?)", (name, party))
-        conn.commit()
-        conn.close()
-        flash(f"Candidate {name} added successfully!", "success")
+        
+        try:
+            cursor.execute("INSERT INTO candidates (name, party) VALUES (?, ?)", (name, party))
+            conn.commit()
+            flash(f"Candidate {name} ({party}) added successfully to the ballot!", "success")
+        except Exception as e:
+            flash(f"Error adding candidate: {e}", "danger")
+        finally:
+            conn.close()
     
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/delete_candidate/<int:id>', methods=['POST'])
-def delete_candidate(id):
-    if 'voter_id' not in session or session['voter_id'] != 'admin':
-        return redirect(url_for('login'))
 
-    conn = sqlite3.connect('users.db')
+@app.route('/admin/delete_candidate/<int:id>', methods=['POST'])
+@login_required
+def delete_candidate(id):
+    if current_user.username != 'admin':
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('/tmp/users.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM candidates WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    flash("Candidate removed successfully.", "success")
     
+    flash("Candidate successfully removed from the ballot.", "success")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/overview')

@@ -11,7 +11,6 @@
     <style>
         /* --- 1. GLOBAL STYLES & ANIMATION --- */
         body {
-            /* The "High-Tech" Animated Background */
             background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #141E30);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
@@ -29,12 +28,12 @@
 
         /* --- 2. GLASSMORPHISM CARDS --- */
         .glass-card {
-            background: rgba(255, 255, 255, 0.95); /* High opacity for readability */
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            color: #333; /* Dark text inside cards */
+            color: #333; 
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             overflow: hidden;
         }
@@ -75,7 +74,6 @@
             padding-left: 30px;
         }
 
-        /* The vertical glowing line */
         .timeline-container::before {
             content: '';
             position: absolute;
@@ -93,11 +91,10 @@
             margin-bottom: 2rem;
         }
 
-        /* The glowing dot for each block */
         .block-node::after {
             content: '';
             position: absolute;
-            left: -34px; /* Adjust based on container padding */
+            left: -34px; 
             top: 20px;
             width: 12px;
             height: 12px;
@@ -135,7 +132,6 @@
             font-weight: 800;
         }
 
-        /* Pulse animation for Pending Badge */
         .badge-pulse {
             animation: pulse 2s infinite;
         }
@@ -163,7 +159,7 @@
                     <span class="text-success small"><i class="fa-solid fa-link me-1"></i>Connected</span>
                 </div>
                 {% if user.username == 'admin' %}
-                <a href="/admin" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold me-2">
+                <a href="/admin/dashboard" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold me-2">
                     <i class="fa-solid fa-cog"></i> Admin
                 </a>
                 {% endif %}
@@ -212,11 +208,10 @@
                                 </div>
                             </div>
 
-                           <div class="mb-4">
+                            <div class="mb-4">
                                 <label class="form-label text-uppercase text-muted small fw-bold">Select Candidate</label>
                                 <select name="candidate" class="form-select form-select-lg border-2" style="border-color: #e9ecef;" required>
                                     <option value="" disabled selected>Select from official ballot...</option>
-                                    
                                     {% if candidates %}
                                         {% for person in candidates %}
                                             <option value="{{ person[1] }}">{{ person[1] }} ({{ person[2] }})</option>
@@ -224,9 +219,7 @@
                                     {% else %}
                                         <option value="" disabled>No candidates registered yet by Admin.</option>
                                     {% endif %}
-                                    
                                 </select>
-                            </div>
                             </div>
 
                             <button type="submit" class="btn btn-gradient w-100 rounded-pill shadow-sm">
@@ -259,8 +252,29 @@
 
                         <hr class="my-4 text-muted">
 
-                        <h6 class="text-uppercase text-muted small fw-bold mb-3"><i class="fa-solid fa-chart-bar me-2"></i>Vote Visualization</h6>
-                        <canvas id="voteChart" width="200" height="200"></canvas>
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3"><i class="fa-solid fa-tags me-2"></i>Vote Visualization</h6>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if vote_counts %}
+                                {% for name, count in vote_counts.items() %}
+                                    {% if count > 0 %}
+                                        <div class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 fs-6 rounded-pill">
+                                            <strong>{{ name }}</strong> 
+                                            <span class="ms-2 badge bg-primary rounded-circle">{{ count }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if vote_counts.values()|sum == 0 %}
+                                    <div class="text-muted small w-100 text-center py-2 bg-light rounded-3">
+                                        <i class="fa-solid fa-hourglass-empty me-1 text-secondary"></i> Awaiting data...
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-muted small w-100 text-center py-2 bg-light rounded-3">
+                                    <i class="fa-solid fa-hourglass-empty me-1 text-secondary"></i> Awaiting data...
+                                </div>
+                            {% endif %}
+                        </div>
 
                     </div>
                 </div>
@@ -390,7 +404,7 @@
                                                     Block contains {{ block.votes|length }} vote{{ 's' if block.votes|length != 1 else '' }}.
                                                 </div>
                                                 {% endif %}
-                                            {% endif %}
+                                        {% endif %}
                                     </div>
 
                                 </div>
@@ -406,24 +420,5 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Load and display vote chart
-        fetch('/chart-data')
-            .then(response => response.json())
-            .then(data => {
-                const ctx = document.getElementById('voteChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: data,
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                            }
-                        }
-                    }
-                });
-            });
-    </script>
+</body>
+</html>

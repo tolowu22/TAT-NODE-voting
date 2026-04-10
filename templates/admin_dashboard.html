@@ -1,50 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard - TAT Node</title>
-    </head>
-<body>
-    <h2>Admin Dashboard: Manage Candidates</h2>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | TAT Blockchain Node</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        </for %}
-      {% endif %}
-    {% endwith %}
+    <style>
+        /* Matches your main site's animated background */
+        body {
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #141E30);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
 
-    <fieldset>
-        <legend>Add New Candidate</legend>
-        <form action="/admin/add_candidate" method="POST">
-            <input type="text" name="name" placeholder="Candidate Name" required>
-            <input type="text" name="party" placeholder="Party Name" required>
-            <button type="submit">Add Candidate</button>
-        </form>
-    </fieldset>
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-    <hr>
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            color: #333;
+            overflow: hidden;
+        }
 
-    <h3>Current Candidates</h3>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Party</th>
-            <th>Action</th>
-        </tr>
-        {% for candidate in candidates %}
-        <tr>
-            <td>{{ candidate[0] }}</td>
-            <td>{{ candidate[1] }}</td>
-            <td>{{ candidate[2] }}</td>
-            <td>
-                <form action="/admin/delete_candidate/{{ candidate[0] }}" method="POST" style="display:inline;">
-                    <button type="submit" style="color: red;">Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+        .card-header-custom {
+            background: linear-gradient(90deg, #f8f9fa, #e9ecef);
+            padding: 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+
+        .navbar-glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(45deg, #434343, #000000);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .btn-gradient:hover { color: #4facfe; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-glass sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                <i class="fa-solid fa-shield-halved fa-lg me-2 text-warning"></i> 
+                <span style="letter-spacing: 1px;">TAT NODE ADMIN</span>
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <a href="/" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Polling Station
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show shadow-lg border-0 rounded-3" role="alert">
+                <i class="fa-solid fa-circle-info me-2"></i> <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="row g-4 mb-5">
+            
+            <div class="col-lg-5">
+                <div class="glass-card h-100">
+                    <div class="card-header-custom">
+                        <i class="fa-solid fa-user-plus text-success me-2"></i>Register Candidate
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="/admin/add_candidate" method="POST">
+                            <div class="mb-4">
+                                <label class="form-label text-uppercase text-muted small fw-bold">Candidate Name</label>
+                                <input type="text" name="name" class="form-control form-control-lg bg-light border-0" placeholder="e.g. John Doe" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label text-uppercase text-muted small fw-bold">Political Party</label>
+                                <input type="text" name="party" class="form-control form-control-lg bg-light border-0" placeholder="e.g. APC, PDP, LP" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-gradient w-100 rounded-pill shadow-sm py-3 mt-2">
+                                <i class="fa-solid fa-plus me-2"></i> ADD TO BALLOT
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="glass-card h-100">
+                    <div class="card-header-custom">
+                        <i class="fa-solid fa-users-rectangle text-primary me-2"></i>Official Ballot Overview
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-muted small text-uppercase">ID</th>
+                                        <th class="text-muted small text-uppercase">Name</th>
+                                        <th class="text-muted small text-uppercase">Party</th>
+                                        <th class="text-muted small text-uppercase text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if candidates %}
+                                        {% for candidate in candidates %}
+                                        <tr>
+                                            <td><span class="badge bg-secondary bg-opacity-25 text-secondary">#{{ candidate[0] }}</span></td>
+                                            <td class="fw-bold">{{ candidate[1] }}</td>
+                                            <td><span class="badge bg-dark text-light px-2 py-1">{{ candidate[2] }}</span></td>
+                                            <td class="text-end">
+                                                <form action="/admin/delete_candidate/{{ candidate[0] }}" method="POST" style="display:inline;">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                                                        <i class="fa-solid fa-trash-can me-1"></i> Remove
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-5 text-muted">
+                                                <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                                                <p class="mb-0">No candidates have been registered to the ballot yet.</p>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
