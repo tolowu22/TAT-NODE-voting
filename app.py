@@ -434,7 +434,13 @@ def index():
         
     conn.close()
 
-    return render_template('index.html', candidates=candidates, user=current_user)
+    # 4. GET THE VOTE COUNTS
+    # We will pass an empty dictionary for now just to stop the crash and load the page.
+    # (Later, you can change this to: vote_counts = blockchain.get_vote_counts() or similar)
+    vote_counts = {}
+
+    # 5. PASS VOTE_COUNTS TO THE TEMPLATE!
+    return render_template('index.html', candidates=candidates, user=current_user, vote_counts=vote_counts)
 
 @app.route('/vote', methods=['POST'])
 @login_required
