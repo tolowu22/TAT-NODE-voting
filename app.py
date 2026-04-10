@@ -61,6 +61,13 @@ def ensure_db():
                     verification_token TEXT
                 )
             ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS candidates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                party TEXT NOT NULL
+        )
+    ''')
             
             # Auto-migrate existing databases to include new columns
             try:
@@ -398,21 +405,23 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    try:
-        vote_counts = blockchain.tally_votes(CANDIDATES)
-        chain_valid = blockchain.is_chain_valid(blockchain.chain)
-    except Exception as e:
-        print(f"Error in index: {type(e).__name__}: {e}")
-        vote_counts = {c: 0 for c in CANDIDATES}
-        chain_valid = False
+    # 1. Open the connection to the database
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
     
-    return render_template('index.html', 
-                           chain=blockchain.chain, 
-                           pending=blockchain.pending_votes,
-                           candidates=CANDIDATES,
-                           vote_counts=vote_counts,
-                           chain_valid=chain_valid,
-                           user=current_user)
+    # 2. Fetch the dynamic candidates
+    try:
+        cursor.execute("SELECT * FROM candidates")
+        candidates = cursor.fetchall()
+    except sqlite3.OperationalError:
+        # Just in case the admin hasn't created the table yet, don't crash!
+        candidates = [] 
+        
+    # 3. Close the connection
+    conn.close()
+
+    # 4. Render the page and pass the candidates to the HTML
+    return render_template('index.html', candidates=candidates, user=current_user)
 
 @app.route('/vote', methods=['POST'])
 @login_required
@@ -452,6 +461,7 @@ def vote():
             flash("Error processing vote. Please try again.", "danger")
     else:
         flash("Error: Missing Candidate selection.", "warning")
+        
             
     return redirect(url_for('index'))
 
@@ -576,6 +586,53 @@ def audit():
         print(f"Error in audit: {type(e).__name__}: {e}")
         tampered_blocks = []
     return render_template('audit.html', tampered_blocks=tampered_blocks, chain=blockchain.chain)
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    # Only allow admin to access this! You might want to check the session here.
+    if 'voter_id' not in session or session['voter_id'] != 'admin':
+        flash("Unauthorized access. Admin only.", "danger")
+        return redirect(url_for('login'))
+
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM candidates")
+    candidates = cursor.fetchall()
+    conn.close()
+    
+    return render_template('admin_dashboard.html', candidates=candidates)
+
+@app.route('/admin/add_candidate', methods=['POST'])
+def add_candidate():
+    if 'voter_id' not in session or session['voter_id'] != 'admin':
+        return redirect(url_for('login'))
+
+    name = request.form.get('name')
+    party = request.form.get('party')
+
+    if name and party:
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO candidates (name, party) VALUES (?, ?)", (name, party))
+        conn.commit()
+        conn.close()
+        flash(f"Candidate {name} added successfully!", "success")
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_candidate/<int:id>', methods=['POST'])
+def delete_candidate(id):
+    if 'voter_id' not in session or session['voter_id'] != 'admin':
+        return redirect(url_for('login'))
+
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM candidates WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    flash("Candidate removed successfully.", "success")
+    
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/overview')
 def overview():

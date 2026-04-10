@@ -212,14 +212,21 @@
                                 </div>
                             </div>
 
-                            <div class="mb-4">
+                           <div class="mb-4">
                                 <label class="form-label text-uppercase text-muted small fw-bold">Select Candidate</label>
                                 <select name="candidate" class="form-select form-select-lg border-2" style="border-color: #e9ecef;" required>
                                     <option value="" disabled selected>Select from official ballot...</option>
-                                    {% for person in candidates %}
-                                        <option value="{{ person }}">{{ person }}</option>
-                                    {% endfor %}
+                                    
+                                    {% if candidates %}
+                                        {% for person in candidates %}
+                                            <option value="{{ person[1] }}">{{ person[1] }} ({{ person[2] }})</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="" disabled>No candidates registered yet by Admin.</option>
+                                    {% endif %}
+                                    
                                 </select>
+                            </div>
                             </div>
 
                             <button type="submit" class="btn btn-gradient w-100 rounded-pill shadow-sm">

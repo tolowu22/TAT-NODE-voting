@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - TAT Node</title>
+    </head>
+<body>
+    <h2>Admin Dashboard: Manage Candidates</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        </for %}
+      {% endif %}
+    {% endwith %}
+
+    <fieldset>
+        <legend>Add New Candidate</legend>
+        <form action="/admin/add_candidate" method="POST">
+            <input type="text" name="name" placeholder="Candidate Name" required>
+            <input type="text" name="party" placeholder="Party Name" required>
+            <button type="submit">Add Candidate</button>
+        </form>
+    </fieldset>
+
+    <hr>
+
+    <h3>Current Candidates</h3>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Party</th>
+            <th>Action</th>
+        </tr>
+        {% for candidate in candidates %}
+        <tr>
+            <td>{{ candidate[0] }}</td>
+            <td>{{ candidate[1] }}</td>
+            <td>{{ candidate[2] }}</td>
+            <td>
+                <form action="/admin/delete_candidate/{{ candidate[0] }}" method="POST" style="display:inline;">
+                    <button type="submit" style="color: red;">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
