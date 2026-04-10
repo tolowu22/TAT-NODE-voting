@@ -14,6 +14,7 @@ import sqlite3
 import os
 from time import time
 from blockchain_voting_system import Blockchain
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 # --- 1. CONFIGURATION & SECURITY ---
 # Load environment variables from .env file
@@ -405,22 +406,22 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    # 1. Open the connection to the database
-    conn = sqlite3.connect('users.db')
+    # 1. Get the absolute path to where app.py lives on Vercel
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(BASE_DIR, 'users.db')
+    
+    # 2. Connect using the absolute path
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
-    # 2. Fetch the dynamic candidates
     try:
         cursor.execute("SELECT * FROM candidates")
         candidates = cursor.fetchall()
     except sqlite3.OperationalError:
-        # Just in case the admin hasn't created the table yet, don't crash!
         candidates = [] 
         
-    # 3. Close the connection
     conn.close()
 
-    # 4. Render the page and pass the candidates to the HTML
     return render_template('index.html', candidates=candidates, user=current_user)
 
 @app.route('/vote', methods=['POST'])
