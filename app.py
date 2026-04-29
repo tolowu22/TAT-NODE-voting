@@ -107,24 +107,39 @@ def send_verification_email(recipient_email, verify_link):
         return False
 
     message = MIMEMultipart("alternative")
-    message["Subject"] = "Verify your TAT Node Identity"
-    message["From"] = sender_email
+    
+    # 1. UPDATED SUBJECT LINE
+    message["Subject"] = "Verify your TAT Node Voter Identity"
+    
+    # 2. UPDATED SENDER NAME (Shows up professionally in the inbox!)
+    message["From"] = f"TAT Electoral Commission <{sender_email}>"
+    
     message["To"] = recipient_email
 
-    # Plain text version
+    # Plain text version (Fallback)
     text = f"Welcome to TAT Node!\n\nPlease verify your account by clicking the following link:\n{verify_link}"
     
-    # HTML version for better formatting
+    # 3. UPGRADED HTML DESIGN (Matches your dark-blue web theme)
     html = f"""\
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-            <h2 style="color: #090979;">Welcome to TAT Node!</h2>
-            <p>Your blockchain identity has been reserved. To complete your registration and enter the polling station, please verify your email address.</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{verify_link}" style="background-color: #38ef7d; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">Verify My Account</a>
+      <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f7f6; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 30px; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <div style="text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 20px;">
+                <h2 style="color: #302b63; margin: 0; letter-spacing: 1px;">TAT BLOCKCHAIN NODE</h2>
+                <span style="color: #777; font-size: 0.9em; text-transform: uppercase; font-weight: bold;">Official Electoral Commission</span>
             </div>
-            <p style="font-size: 0.8em; color: #777;">If the button doesn't work, copy and paste this link into your browser:<br>{verify_link}</p>
+            
+            <h3 style="color: #2c3e50;">Identity Verification Required</h3>
+            <p style="line-height: 1.6; color: #555;">Your secure blockchain voter identity has been successfully reserved in the system. To complete your registration and gain access to the polling station, please verify your email address below.</p>
+            
+            <div style="text-align: center; margin: 40px 0;">
+                <a href="{verify_link}" style="background: linear-gradient(45deg, #302b63, #141E30); color: white; padding: 14px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(48, 43, 99, 0.3);">Authorize My Account</a>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <p style="font-size: 0.85em; color: #6c757d; margin: 0;">If the authorization button doesn't work, copy and paste this secure link directly into your browser:<br>
+                <a href="{verify_link}" style="color: #4facfe; word-break: break-all; margin-top: 5px; display: inline-block;">{verify_link}</a></p>
+            </div>
         </div>
       </body>
     </html>
